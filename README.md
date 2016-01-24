@@ -23,5 +23,6 @@ Currently providing the most basic show information per my needs at the moment.
 
 - [ ] doctests
 - [ ] Include schedule
-- [ ] Episode search/struct
+- [x] Episode find
+- [x] Episode struct
 - [ ] Cast search/struct
