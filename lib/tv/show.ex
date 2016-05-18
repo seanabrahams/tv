@@ -83,6 +83,7 @@ defmodule Tv.Show do
       premier_date: data["premiered"],
       rating: data["rating"]["average"],
       runtime: data["runtime"],
+      schedule: data["schedule"],
       status: data["status"],
       type: data["type"],
       # Private
