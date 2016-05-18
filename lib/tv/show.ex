@@ -7,11 +7,70 @@ defmodule Tv.Show do
     status: nil, type: nil, web_url: nil, tvmaze_web_url: nil,
     tvmaze_api_url: nil, previous_episode_url: nil, next_episode_url: nil
 
-  def convert(data) when is_list(data) do
+  ##
+  # Public functions
+
+  # All shows, paginated
+  def all([page: page]) do
+    get!("shows?page=#{page}").body
+  end
+
+  def all do
+    all(page: 1)
+  end
+
+  def find([tvmaze_id: tvmaze_id]) do
+    get!("shows/#{tvmaze_id}").body
+  end
+
+  def find(name) do
+    search(name)
+  end
+
+  # TODO: Support limit: 1 by figuring out how best to handle optional function
+  # arguments. This will allow us to support TVMaze's singlesearch/shows endpoint
+  def search(name, [page: page]) do
+    get!("search/shows?q=#{name}").body
+  end
+
+  def search(name) do
+    search(name, page: 1)
+  end
+
+  def next_episode(show) do
+    get_episode(show.next_episode_url)
+  end
+
+  def previous_episode(show) do
+    get_episode(show.previous_episode_url)
+  end
+
+  ##
+  # Override HTTPoison.Base
+  def process_url(url) do
+    "http://api.tvmaze.com/" <> url
+  end
+
+  def process_response_body(body) do
+    body
+    |> Poison.decode!
+    |> convert
+  end
+
+  ##
+  # Private functions
+  defp convert(data) when is_list(data) do
     Enum.map(data, &(convert(&1)))
   end
 
-  def convert(data) do
+  defp convert(data) do
+    data = case data do
+      %{"score" => _score, "show" => show} ->
+        show
+      _ ->
+        data
+    end
+
     %Tv.Show{
       tvmaze_id: data["id"],
       imdb_id: data["externals"]["imdb"],
@@ -32,32 +91,6 @@ defmodule Tv.Show do
       previous_episode_url: data["_links"]["previousepisode"]["href"],
       next_episode_url: data["_links"]["nextepisode"]["href"]
     }
-  end
-
-  def find([tvmaze_id: tvmaze_id]) do
-    get!("shows/#{tvmaze_id}").body
-  end
-
-  def find(name) do
-    get!("singlesearch/shows?q=#{name}").body
-  end
-
-  def next_episode(show) do
-    get_episode(show.next_episode_url)
-  end
-
-  def previous_episode(show) do
-    get_episode(show.previous_episode_url)
-  end
-
-  def process_url(url) do
-    "http://api.tvmaze.com/" <> url
-  end
-
-  def process_response_body(body) do
-    body
-    |> Poison.decode!
-    |> convert
   end
 
   defp get_episode(url) do
